@@ -24,8 +24,8 @@ bot = commands.Bot(command_prefix='.', description = "Hi :)", intents = intents)
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 WHEN = datetime.time(16, 31, 0)  # 6:00 PM
 tz = pytz.timezone('US/Eastern')
-channel_id = ""
-guild_id = ""
+channel_id = int(os.environ['channel_id'])
+guild_id = int(os.environ['guild_id'])
 #defining out of discord bot for use in functions
 
 def main(response,arg):
@@ -38,7 +38,7 @@ def main(response,arg):
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    creds_json = ""
+    creds_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
     alright = json.loads(creds_json)
     creds = Credentials.from_authorized_user_info(alright,SCOPES)
     
@@ -68,10 +68,10 @@ def main(response,arg):
         now = datetime.datetime.now(datetime.timezone.utc).astimezone()
         #checking if user who gave the command is intended user
         #getting events
-        events_result = service.events().list(calendarId="", timeMin=day,
+        events_result = service.events().list(calendarId=os.environ['calendar_email'], timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
-        events_result1 = service.events().list(calendarId="", timeMin=day,
+        events_result1 = service.events().list(calendarId=os.environ['schedule_id'], timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
         #setting end of day for to only get free time within school day  
@@ -193,7 +193,7 @@ async def quotes(ctx,arg):
     username = str(ctx.message.author.id)
     response = ""
     arg = arg.lower()
-    if username == "":
+    if username == os.environ['DISCORD_ID']:
         if arg == '0' or arg == "today":
             response = "today's breakdown is:\n"
         elif arg == '1' or arg == "tomorrow":
@@ -212,4 +212,4 @@ async def quotes(ctx,arg):
         await ctx.send(message)
 #to update do git add . then git commit -m "message" then git push
 bot.loop.create_task(background_task())
-bot.run("")
+bot.run(os.environ['DISCORD_TOKEN'])
