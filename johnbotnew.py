@@ -7,7 +7,6 @@ import random
 import os
 import requests
 from discord.ext import commands
-from keys import discord_id
 import datetime
 import os.path
 import time
@@ -25,8 +24,8 @@ bot = commands.Bot(command_prefix='.', description = "Hi :)", intents = intents)
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 WHEN = datetime.time(16, 31, 0)  # 6:00 PM
 tz = pytz.timezone('US/Eastern')
-channel_id = 948782064839311360
-guild_id = 943882154146938950
+channel_id = ""
+guild_id = ""
 #defining out of discord bot for use in functions
 
 def main(response,arg):
@@ -39,27 +38,11 @@ def main(response,arg):
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
-# The file token.json stores the user's access and refresh tokens, and is
-# created automatically when the authorization flow completes for the first
-# time.
-    # hi = '{"token": "ya29.A0ARrdaM-0hJYhw-ySiwx11pvR9xFfk-20KCA296aRPXllQZb3x_pBdY0TZCVB2rtfZimW6Caa6m7KweACQngYpgLepF_3FLSukbIlNXWVizrOBjUc7ON_YPw-rZnBjRw3UzEi_vCluZISDcNqiegCRru6omQn", "refresh_token": "1//0dmXi32eSZK5PCgYIARAAGA0SNwF-L9IrlSxpxFS40lHiQZ7QRceWfTQndTXUjJWIBLJA4B9fnVIykzZWN8-NcNVDwvYVxRLHB38", "token_uri": "https://oauth2.googleapis.com/token", "client_id": "22979422620-rg3c6ecsk0euh90lelvfl8q4svhe4qoa.apps.googleusercontent.com", "client_secret": "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", "scopes": ["https://www.googleapis.com/auth/calendar.readonly"], "expiry": "2022-04-04T16:36:36.683185Z"}'
-    # alrght = json.loads(hi)
-    # creds = Credentials.from_authorized_user_info(alrght, SCOPES)
-    #creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-# If there are no (valid) credentials available, let the user log in.
+    creds_json = ""
+    alright = json.loads(creds_json)
+    creds = Credentials.from_authorized_user_info(alright,SCOPES)
+    
+
 
     try:
         service = build('calendar', 'v3', credentials=creds)
@@ -85,10 +68,10 @@ def main(response,arg):
         now = datetime.datetime.now(datetime.timezone.utc).astimezone()
         #checking if user who gave the command is intended user
         #getting events
-        events_result = service.events().list(calendarId='gckyoshi@gmail.com', timeMin=day,
+        events_result = service.events().list(calendarId="", timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
-        events_result1 = service.events().list(calendarId='7cv5jhgcc3g39vvetu24tg8pqs@group.calendar.google.com', timeMin=day,
+        events_result1 = service.events().list(calendarId="", timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
         #setting end of day for to only get free time within school day  
@@ -210,7 +193,7 @@ async def quotes(ctx,arg):
     username = str(ctx.message.author.id)
     response = ""
     arg = arg.lower()
-    if username == "243481871915155468":
+    if username == "":
         if arg == '0' or arg == "today":
             response = "today's breakdown is:\n"
         elif arg == '1' or arg == "tomorrow":
@@ -229,4 +212,4 @@ async def quotes(ctx,arg):
         await ctx.send(message)
 #to update do git add . then git commit -m "message" then git push
 bot.loop.create_task(background_task())
-bot.run(discord_id)
+bot.run("")
