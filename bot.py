@@ -1,33 +1,33 @@
-#!/usr/bin/env python3.10
 from __future__ import print_function
 from email import message
-from re import A
 import discord
 import random
 import os
-import requests
 from discord.ext import commands
 import datetime
 import os.path
 import time
 import asyncio
-import pytz
 import json
+import pytz
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-intents = discord.Intents.default()
-intents.members = True
+#new add idk
+intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='.', description = "Hi :)", intents = intents)
 SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
-WHEN = datetime.time(16, 31, 0)  # 6:00 PM
+WHEN = datetime.time(8, 0, 0)  # 8:00 AM
 tz = pytz.timezone('US/Eastern')
-channel_id = int(os.environ['channel_id'])
+#server you want to send daily message
+#copy will be made for tufts
 guild_id = int(os.environ['guild_id'])
+#channel you want to send message in
+channel_id = int(os.environ['channel_id'])
 #defining out of discord bot for use in functions
-
+#defining out of discord bot for use in functions
 def main(response,arg):
         
     """Shows basic usage of the Google Calendar API.
@@ -188,7 +188,9 @@ async def quotes(ctx):
     response = random.choice(John_quotes)
     await ctx.send(response)
 
-@bot.command(name='schedule',help = 'coming soon to a John bot near you')
+@bot.command(name='schedule',help ="""Gets free time for a day in the future
+ Usage: ".schedule x" where x is how manys in the future you want your free time for
+  You can use today or tomorrow instead of 0 and 1 respectively.""")
 async def quotes(ctx,arg):
     username = str(ctx.message.author.id)
     response = ""
@@ -199,7 +201,8 @@ async def quotes(ctx,arg):
         elif arg == '1' or arg == "tomorrow":
             response = "tomorrow's breakdown is:\n"
         elif arg.isdigit():
-            day = datetime.datetime.now(datetime.timezone.utc).astimezone()
+            day = datetime.datetime.now(tz)
+            
             day = day.replace(hour=0, minute=0, second=0, microsecond=0)
             day = day + datetime.timedelta(days=int(arg))
             response = "The breakdown on " +  datetime.datetime.strftime(day ,'%A') + ", " + datetime.datetime.strftime(day,'%m/%d') + ": \n"
