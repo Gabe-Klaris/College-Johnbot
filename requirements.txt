@@ -1,0 +1,6 @@
+discord
+google-api-python-client
+datetime
+google-auth-oauthlib
+google-cloud
+google-cloud-vision
