@@ -22,33 +22,17 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 WHEN = datetime.time(8, 0, 0)  # 8:00 AM
 tz = pytz.timezone('US/Eastern')
 #server you want to send daily message
-#copy will be made for tufts
 guild_id = int(os.environ['guild_id'])
 #channel you want to send message in
 channel_id = int(os.environ['channel_id'])
 #defining out of discord bot for use in functions
-#defining out of discord bot for use in functions
 def main(response,arg):
-        
-    """Shows basic usage of the Google Calendar API.
-    Prints the start and name of the next 10 events on the user's calendar.
-    """
-    creds = None
-    creds = None
-    # The file token.json stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
     creds_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
     alright = json.loads(creds_json)
     creds = Credentials.from_authorized_user_info(alright,SCOPES)
-    
-
-
     try:
         service = build('calendar', 'v3', credentials=creds)
-
     #uses arg supplied with command to get schedule to specified day
-        print(response)
         if response == "no" or response == "invalid input":
             return response
         advance = 0
@@ -59,35 +43,62 @@ def main(response,arg):
         elif arg.isdigit() == True:
             advance = int(arg)
         #sets day and day end for specified day to get events on that day
-        day = datetime.datetime.now(datetime.timezone.utc).astimezone()
+        day = datetime.datetime.now(tz)
         day = day.replace(hour=0, minute=0, second=0, microsecond=0)
         day = day + datetime.timedelta(days=advance)
         dayend = day.replace(hour=23, minute=59, second=59, microsecond=0)
         day = day.isoformat()
         dayend = dayend.isoformat()
-        now = datetime.datetime.now(datetime.timezone.utc).astimezone()
-        #checking if user who gave the command is intended user
-        #getting events
         events_result = service.events().list(calendarId=os.environ['calendar_email'], timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
         events_result1 = service.events().list(calendarId=os.environ['schedule_id'], timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
-        #setting end of day for to only get free time within school day  
-        endOfDay = now.replace(hour=15, minute=15, second=0)
-        endOfDay = endOfDay + datetime.timedelta(days=advance)
         #function that sorts the events to give result
-        def dayschedule(event_result,event_result1,response,dayend):
+        def dayschedule(event_result,event_result1,response):
             events = events_result.get('items', [])
             events1 = events_result1.get('items', [])
+            #no events
             if not events and not events1:
                 response += 'free all day, go watch some anime\n'
                 return response
-            dayend = datetime.datetime.strftime(dayend,'%Y-%m-%d %H:%M:%S')
-            dayend = datetime.datetime.strptime(dayend,'%Y-%m-%d %H:%M:%S')
-            #grabs start and end time for all events
+            #puts all events in a list
+            event_list = []
             for event in events1:
+                event_list.append(event)
+            for event in events:
+                event_list.append(event)
+            start_list = []
+            #gets a datetime variable for the time each event starts in the list and adds it to a list
+            for i in range(0,len(event_list)):
+                start = event_list[i]['start'].get('dateTime', event_list[i]['start'].get('date'))
+                end = event_list[i]['end'].get('dateTime', event_list[i]['end'].get('date'))
+                #checks if an event is an "all day" event 
+                if "T" in start and start != end:
+                    start = start.replace("T", " ")
+                    start = start[:-6]
+                    start = datetime.datetime.strptime(start,'%Y-%m-%d %H:%M:%S')
+                    start_list.append(start)
+                else:
+                    response += "**" + event_list[i]['summary'] + "**" + "\n"
+                    event_list.pop(i)
+            #sorts event_list by time
+            #since the index value of the time in start_list and full event in event_list are the same, sorts both
+            i = 0
+            while i != len(event_list)-1:
+                if start_list[i] > start_list[i+1]:
+                    temp = start_list[i]
+                    start_list[i] = start_list[i+1]
+                    start_list[i+1] = temp
+                    temp1 = event_list[i]
+                    event_list[i] = event_list[i+1]
+                    event_list[i+1] = temp1
+                    i = 0
+                else:
+                    i += 1
+            #gets ordered events in format to return
+            for event in event_list:
                 start = event['start'].get('dateTime', event['start'].get('date'))
                 end = event['end'].get('dateTime', event['end'].get('date'))
                 start = start.replace("T", " ")
@@ -96,32 +107,14 @@ def main(response,arg):
                 end = end.replace("T", " ")
                 end = end[:-6]
                 end = datetime.datetime.strptime(end,'%Y-%m-%d %H:%M:%S')
-                class_event = "You have class " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
-                response += str(class_event)
-            #gets free time and adds to response
-            
-            #gets other events and adds to calendar
-            for event in events:
-                print(event)
-                start = event['start'].get('dateTime', event['start'].get('date'))
-                print(start)
-                end = event['end'].get('dateTime', event['end'].get('date'))
-                if "T" in start and start != end:
-                    start = start.replace("T", " ")
-                    start = start[:-6]
-                    start = datetime.datetime.strptime(start,'%Y-%m-%d %H:%M:%S')
-                    end = end.replace("T", " ")
-                    end = end[:-6]
-                    end = datetime.datetime.strptime(end,'%Y-%m-%d %H:%M:%S')
-                    calendar_events = "You have an event " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
-                    response += str(calendar_events)
-                #for all day events
+                #differentiate between classes (imported from school site) and events (created by you)
+                if event['organizer']['email'] == os.environ['calendar_email']:
+                    class_event = "You have an event  " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
                 else:
-                    response = "**" + event['summary'] + "**" + "\n" + response
-                    
-
+                    class_event = "You have class " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
+                response += str(class_event)
             return response
-        response = dayschedule(events_result,events_result1,response,endOfDay)
+        response = dayschedule(events_result,events_result1,response)
     except HttpError as error:
         print('An error occurred: %s' % error)
     print(response)
@@ -132,8 +125,8 @@ async def on_ready():
     
 async def called_once_a_day():  # Fired every day
     print("lkshfds")
-    await bot.wait_until_ready()  # Make sure your guild cache is ready so the channel can be found via get_channel
-    channel = bot.get_guild(guild_id).get_channel(channel_id) # Note: It's more efficient to do bot.get_guild(guild_id).get_channel(channel_id) as there's less looping involved, but just get_channel still works fine
+    await bot.wait_until_ready() 
+    channel = bot.get_guild(guild_id).get_channel(channel_id) 
     print(channel)
     await channel.send(main("today's breakdown is:\n","today"))
 
@@ -195,6 +188,7 @@ async def quotes(ctx,arg):
     username = str(ctx.message.author.id)
     response = ""
     arg = arg.lower()
+    #makes sure only you can use the command
     if username == os.environ['DISCORD_ID']:
         if arg == '0' or arg == "today":
             response = "today's breakdown is:\n"
