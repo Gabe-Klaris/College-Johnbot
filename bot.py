@@ -15,7 +15,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from keys import Discord_Token,Discord_ID,guild_id,channel_id
+from keys import Discord_Token,Discord_ID,guild_id,channel_id,calendar_email,schedule_id,google_creds
 #new add idk
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='.', description = "Hi :)", intents = intents)
@@ -23,12 +23,12 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.readonly']
 WHEN = datetime.time(8, 0, 0)  # 8:00 AM
 tz = pytz.timezone('US/Eastern')
 #server you want to send daily message
-guild_id = int(os.environ['guild_id'])
+guild_id = int(guild_id)
 #channel you want to send message in
-channel_id = int(os.environ['channel_id'])
+channel_id = int(channel_id)
 #defining out of discord bot for use in functions
 def main(response,arg):
-    creds_json = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+    creds_json = google_creds
     alright = json.loads(creds_json)
     creds = Credentials.from_authorized_user_info(alright,SCOPES)
     try:
@@ -50,10 +50,10 @@ def main(response,arg):
         dayend = day.replace(hour=23, minute=59, second=59, microsecond=0)
         day = day.isoformat()
         dayend = dayend.isoformat()
-        events_result = service.events().list(calendarId=os.environ['calendar_email'], timeMin=day,
+        events_result = service.events().list(calendar_email, timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
-        events_result1 = service.events().list(calendarId=os.environ['schedule_id'], timeMin=day,
+        events_result1 = service.events().list(schedule_id, timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
         #function that sorts the events to give result
@@ -190,7 +190,7 @@ async def quotes(ctx,arg):
     response = ""
     arg = arg.lower()
     #makes sure only you can use the command
-    if username == os.environ['Discord_ID']:
+    if username == Discord_ID:
         if arg == '0' or arg == "today":
             response = "today's breakdown is:\n"
         elif arg == '1' or arg == "tomorrow":
@@ -212,5 +212,5 @@ async def quotes(ctx,arg):
 async def main2():
     async with bot:
         bot.loop.create_task(background_task())
-        await bot.start(os.environ['Discord_Token'])
+        await bot.start(Discord_Token)
 asyncio.run(main2())
