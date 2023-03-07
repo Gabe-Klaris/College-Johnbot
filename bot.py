@@ -15,7 +15,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from keys import Discord_Token,Discord_ID,guild_id,channel_id,calendar_email,schedule_id,google_creds
+from keys import Discord_Token,Discord_ID,guild_id,channel_id,calendar_email,schedule_id,other_id, google_creds
 #new add idk
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='.', description = "Hi :)", intents = intents)
@@ -27,6 +27,72 @@ guild_id = int(guild_id)
 #channel you want to send message in
 channel_id = int(channel_id)
 #defining out of discord bot for use in functions
+def dayschedule(events_result,events_result1, events_result2, response,dayend):
+    events = events_result.get('items', [])
+    events1 = events_result1.get('items', [])
+    events2 = events_result2.get('items', [])
+    #no events
+    if not events and not events1 and not events2:
+        response += 'free all day, go watch some anime\n'
+        return response
+    #puts all events in a list
+    event_list = []
+    for event in events1:
+        event_list.append(event)
+    for event in events:
+        event_list.append(event)
+    for event in events2:
+        event_list.append(event)
+    start_list = []
+    #gets a datetime variable for the time each event starts in the list and adds it to a list
+    for i in range(0,len(event_list)):
+        start = event_list[i]['start'].get('dateTime', event_list[i]['start'].get('date'))
+        end = event_list[i]['end'].get('dateTime', event_list[i]['end'].get('date'))
+        #checks if an event is an "all day" event 
+        if "T" in start and start != end:
+            start = start.replace("T", " ")
+            start = start[:-6]
+            print(start)
+            start = datetime.datetime.strptime(start,'%Y-%m-%d %H:%M:%S')
+            start_list.append(start)
+        else:
+            if end <= dayend:
+                response += "**" + event_list[i]['summary'] + "**" + "\n"
+            event_list.pop(i)
+    #sorts event_list by time
+    #since the index value of the time in start_list and full event in event_list are the same, sorts both
+    i = 0
+    while i < len(event_list)-1:
+        if start_list[i] > start_list[i+1]:
+            temp = start_list[i]
+            start_list[i] = start_list[i+1]
+            start_list[i+1] = temp
+            temp1 = event_list[i]
+            event_list[i] = event_list[i+1]
+            event_list[i+1] = temp1
+            i = 0
+        else:
+            i += 1
+    #gets ordered events in format to return
+
+    for event in event_list:
+        start = event['start'].get('dateTime', event['start'].get('date'))
+        end = event['end'].get('dateTime', event['end'].get('date'))
+        start = start.replace("T", " ")
+        start = start[:-6]
+        start = datetime.datetime.strptime(start,'%Y-%m-%d %H:%M:%S')
+        end = end.replace("T", " ")
+        end = end[:-6]
+        end = datetime.datetime.strptime(end,'%Y-%m-%d %H:%M:%S')
+        #differentiate between classes (imported from school site) and events (created by me)
+        if len(event['organizer']) <= 2:
+            class_event = "You have an event  " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
+        elif event['organizer']['displayName'] == "":
+            class_event = "You have class " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
+        elif event['organizer']['displayName'] == "":
+            class_event = "You have an assignment " + event['summary'] + " due at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
+        response += str(class_event)
+    return response
 def main(response,arg):
     creds_json = google_creds
     alright = json.loads(creds_json)
@@ -56,66 +122,11 @@ def main(response,arg):
         events_result1 = service.events().list(schedule_id, timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
+        events_result2 = service.events().list(other_id, timeMin=day,
+                                            timeMax = dayend, singleEvents=True,
+                                            orderBy='startTime').execute()
         #function that sorts the events to give result
-        def dayschedule(event_result,event_result1,response):
-            events = events_result.get('items', [])
-            events1 = events_result1.get('items', [])
-            #no events
-            if not events and not events1:
-                response += 'free all day, go watch some anime\n'
-                return response
-            #puts all events in a list
-            event_list = []
-            for event in events1:
-                event_list.append(event)
-            for event in events:
-                event_list.append(event)
-            start_list = []
-            #gets a datetime variable for the time each event starts in the list and adds it to a list
-            for i in range(0,len(event_list)):
-                start = event_list[i]['start'].get('dateTime', event_list[i]['start'].get('date'))
-                end = event_list[i]['end'].get('dateTime', event_list[i]['end'].get('date'))
-                #checks if an event is an "all day" event 
-                if "T" in start and start != end:
-                    start = start.replace("T", " ")
-                    start = start[:-6]
-                    start = datetime.datetime.strptime(start,'%Y-%m-%d %H:%M:%S')
-                    start_list.append(start)
-                else:
-                    response += "**" + event_list[i]['summary'] + "**" + "\n"
-                    event_list.pop(i)
-            #sorts event_list by time
-            #since the index value of the time in start_list and full event in event_list are the same, sorts both
-            i = 0
-            while i != len(event_list)-1:
-                if start_list[i] > start_list[i+1]:
-                    temp = start_list[i]
-                    start_list[i] = start_list[i+1]
-                    start_list[i+1] = temp
-                    temp1 = event_list[i]
-                    event_list[i] = event_list[i+1]
-                    event_list[i+1] = temp1
-                    i = 0
-                else:
-                    i += 1
-            #gets ordered events in format to return
-            for event in event_list:
-                start = event['start'].get('dateTime', event['start'].get('date'))
-                end = event['end'].get('dateTime', event['end'].get('date'))
-                start = start.replace("T", " ")
-                start = start[:-6]
-                start = datetime.datetime.strptime(start,'%Y-%m-%d %H:%M:%S')
-                end = end.replace("T", " ")
-                end = end[:-6]
-                end = datetime.datetime.strptime(end,'%Y-%m-%d %H:%M:%S')
-                #differentiate between classes (imported from school site) and events (created by you)
-                if event['organizer']['email'] == os.environ['calendar_email']:
-                    class_event = "You have an event  " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
-                else:
-                    class_event = "You have class " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
-                response += str(class_event)
-            return response
-        response = dayschedule(events_result,events_result1,response)
+        response = dayschedule(events_result,events_result1, events_result2, response, dayend)
     except HttpError as error:
         print('An error occurred: %s' % error)
     print(response)
