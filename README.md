@@ -24,6 +24,7 @@ First put the email address that you downloaded the schedule to calendar_email<b
 Now go to your google calendar and on the left of your screen there should be a list of your calendars.<br />
 Click on the three dots next to the name of your classes schedule(should be and go to settings.<br />
 scroll down to "integrate calendar" and there should be a field named "Calendar ID", copy this field and save it with "schedule_id" in config vars.<br />
+Also put the name of this calendar in the field named "Classes name". <br />
 #Step 3.3: Token<br />
 For the last step we need to generate the token to link to your calendar<br />
 First download the google api library using this command in your terminal "pip install --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib"<br />
