@@ -15,7 +15,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from keys import Discord_Token,Discord_ID,guild_id,channel_id,calendar_email,schedule_id,other_id, google_creds
+from keys import Discord_Token,Discord_ID,guild_id,channel_id,calendar_email,schedule_id, classes_name, google_creds
 #new add idk
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='.', description = "Hi :)", intents = intents)
@@ -27,12 +27,11 @@ guild_id = int(guild_id)
 #channel you want to send message in
 channel_id = int(channel_id)
 #defining out of discord bot for use in functions
-def dayschedule(events_result,events_result1, events_result2, response,dayend):
+def dayschedule(events_result,events_result1, response,dayend):
     events = events_result.get('items', [])
     events1 = events_result1.get('items', [])
-    events2 = events_result2.get('items', [])
     #no events
-    if not events and not events1 and not events2:
+    if not events and not events1:
         response += 'free all day, go watch some anime\n'
         return response
     #puts all events in a list
@@ -40,8 +39,6 @@ def dayschedule(events_result,events_result1, events_result2, response,dayend):
     for event in events1:
         event_list.append(event)
     for event in events:
-        event_list.append(event)
-    for event in events2:
         event_list.append(event)
     start_list = []
     #gets a datetime variable for the time each event starts in the list and adds it to a list
@@ -87,10 +84,8 @@ def dayschedule(events_result,events_result1, events_result2, response,dayend):
         #differentiate between classes (imported from school site) and events (created by me)
         if len(event['organizer']) <= 2:
             class_event = "You have an event  " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
-        elif event['organizer']['displayName'] == "":
+        elif event['organizer']['displayName'] == classes_name:
             class_event = "You have class " + event['summary'] + " at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
-        elif event['organizer']['displayName'] == "":
-            class_event = "You have an assignment " + event['summary'] + " due at " + datetime.datetime.strftime(start,"%I:%M") + "-" + datetime.datetime.strftime(end,"%I:%M %p") + "\n"
         response += str(class_event)
     return response
 def main(response,arg):
@@ -122,11 +117,8 @@ def main(response,arg):
         events_result1 = service.events().list(schedule_id, timeMin=day,
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
-        events_result2 = service.events().list(other_id, timeMin=day,
-                                            timeMax = dayend, singleEvents=True,
-                                            orderBy='startTime').execute()
         #function that sorts the events to give result
-        response = dayschedule(events_result,events_result1, events_result2, response, dayend)
+        response = dayschedule(events_result,events_result1, response, dayend)
     except HttpError as error:
         print('An error occurred: %s' % error)
     print(response)
