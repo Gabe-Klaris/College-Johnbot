@@ -27,7 +27,7 @@ guild_id = int(guild_id)
 #channel you want to send message in
 channel_id = int(channel_id)
 #defining out of discord bot for use in functions
-def dayschedule(events_result,events_result1, response,dayend):
+def dayschedule(events_result,events_result1, response,day):
     events = events_result.get('items', [])
     events1 = events_result1.get('items', [])
     #no events
@@ -53,8 +53,12 @@ def dayschedule(events_result,events_result1, response,dayend):
             start = datetime.datetime.strptime(start,'%Y-%m-%d %H:%M:%S')
             start_list.append(start)
         else:
-            if end <= dayend:
+            day = datetime.datetime.strftime(day,"%Y-%m-%d")
+            if start == day:
                 response += "**" + event_list[i]['summary'] + "**" + "\n"
+            else:
+                if len(event_list)==1:
+                    response += 'free all day, go watch some anime\n'  
             event_list.pop(i)
     #sorts event_list by time
     #since the index value of the time in start_list and full event in event_list are the same, sorts both
@@ -109,6 +113,7 @@ def main(response,arg):
         day = day.replace(hour=0, minute=0, second=0, microsecond=0)
         day = day + datetime.timedelta(days=advance)
         dayend = day.replace(hour=23, minute=59, second=59, microsecond=0)
+        day1 = day
         day = day.isoformat()
         dayend = dayend.isoformat()
         events_result = service.events().list(calendar_email, timeMin=day,
@@ -118,7 +123,7 @@ def main(response,arg):
                                             timeMax = dayend, singleEvents=True,
                                             orderBy='startTime').execute()
         #function that sorts the events to give result
-        response = dayschedule(events_result,events_result1, response, dayend)
+        response = dayschedule(events_result,events_result1, response, day1)
     except HttpError as error:
         print('An error occurred: %s' % error)
     print(response)
